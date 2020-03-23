@@ -10,8 +10,12 @@ class Overlay(pygame.sprite.Sprite):
         #pygame.sprite.Sprite.__init__(self)
         super(pygame.sprite.Sprite, self).__init__()
         self.image = pygame.Surface((800, 20))
+        #self.image.fill((0, 0, 0))
         self.rect = self.image.get_rect()
+
+        WHITE = (255, 255, 255)
         self.font = pygame.font.Font('freesansbold.ttf', 18)
+        #self.xyxy = self.font.render('Score: 0        Lives: 5', True, WHITE)
         self.render('Score: 0        Lives: 5')
 
     def draw(self, screen):
@@ -25,7 +29,7 @@ class Overlay(pygame.sprite.Sprite):
         self.render('Score: ' + str(score) + '        Lives: ' + str(lives))
 
 class Paddle(pygame.sprite.Sprite):
-    player_image = pygame.image.load('assets/playerShip1_blue.png')
+    player_image = pygame.image.load('assets/ships/playerShip1_blue.png')
     left = False
     right = False
 
@@ -50,20 +54,24 @@ class Paddle(pygame.sprite.Sprite):
                 self.rect.x = 750
 
 class Star(pygame.sprite.Sprite):
+    inity =0
+    initx =0
     tillBorder = 0
-    starImage = pygame.image.load('assets/laserBlue08.png')
+    starImage = pygame.image.load('assets/star.jpg')
 
-    def __init__(self, xpos, ypos, size):
+    def __init__(self,xpos,ypos,size):
         pygame.sprite.Sprite.__init__(self)
         self.xpos = xpos
         self.ypos = ypos
-        self.image = pygame.transform.scale(self.starImage,(size, size))
+        self.initx= xpos
+        self.inity = ypos
+        self.image = pygame.transform.scale(self.starImage,(size,size))
         self.vector = [-2, -2]
 
     def update(self,screen):
         if self.xpos <= 0:
-            self.xpos += (600 - self.ypos)
-            self.ypos += (600 - self.ypos)
+            self.xpos += (600-self.ypos)
+            self.ypos += (600-self.ypos)
         elif self.ypos <=0:
             self.ypos += (800 - self.xpos)
             self.xpos += (800 - self.xpos)
@@ -73,46 +81,97 @@ class Star(pygame.sprite.Sprite):
 
 
 class Block(pygame.sprite.Sprite):
-    enemy1_image = pygame.image.load('/assets')
-    def __init__(self):
+    enemy_blue_image = pygame.image.load('assets/ships/enemyBlue.png')
+    enemy_green_image = pygame.image.load('assets/ships/enemyGreen.png')
+    enemy_red_image = pygame.image.load('assets/ships/enemyRed.png')
+
+    def __init__(self, asset_id):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((25, 25))
-        self.color = ( random.randint(0, 255), random.randint(0, 255), random.randint(0, 255) )
-        self.image.fill(self.color)
+
+        if asset_id == 0:
+            self.image = pygame.transform.scale(self.enemy_blue_image, (25,25))
+        elif asset_id == 1:
+            self.image = pygame.transform.scale(self.enemy_green_image, (25, 25))
+        else:
+            self.image = pygame.transform.scale(self.enemy_red_image, (25, 25))
+
         self.rect = self.image.get_rect()
         self.vector = [2,0]
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
     def update(self, game, bool):
         if bool == True:
             self.vector[0] *= -1
         self.rect.x += self.vector[0]
 
+class Boss(pygame.sprite.Sprite):
+    hitpoint = 15
+    boss_image = pygame.image.load(r"assets/enemyBlack1.png")
+
+
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.transform.scale(self.boss_image, (150, 100))
+        self.rect = self.image.get_rect()
+        self.rect.x = 325
+        self.rect.y = 50
+        self.vector = [5,0]
+
+    def shoot(self,game):
+        print("shoot")
+        Lball = Ball(True)
+        Rball = Ball(True)
+        Lball.rect.x = (self.rect.x + 45)
+        Lball.rect.y = 145
+        Rball.rect.x = (self.rect.x + 105)
+        Rball.rect.y = 145
+        game.balls.add(Lball)
+        game.balls.add(Rball)
+
+    def is_hit(self):
+        self.hitpoint -= 1
+        if self.hitpoint == 0:
+            game.game_over()
+
+    def update(self,game):
+        if random.randint(0,250) < 6:
+            self.shoot(game)
+
+        if (self.rect.x >= 650) or self.rect.x <= 5:
+            self.vector[0] *= -1
+        self.rect.x += self.vector[0]
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
 
 class Ball(pygame.sprite.Sprite):
     enemy = False
-    def __init__(self, enemy):
+    def __init__(self,enemy):
         self.enemy = enemy
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((5, 5))
         if self.enemy == False:
-            pygame.draw.circle(self.image, (0, 0, 255), (5, 5), 10)
+            pygame.draw.circle(self.image, (0, 0, 255), (5, 5),10)
         else:
-            pygame.draw.circle(self.image, (255, 0, 0), (5, 5), 10)
-
+            pygame.draw.circle(self.image, (255, 0, 0), (5, 5),10)
 
         self.rect = self.image.get_rect()
         self.rect.x = 400
         self.rect.y = 560
         self.vector = [ 0, 0 ]
-        self.enemy_death_sound = pygame.mixer.Sound('assets/enemy_explosion.wav')
+
+        self.enemy_death_sound = pygame.mixer.Sound('assets/sounds/enemy_explosion.wav')
         self.enemy_death_sound.set_volume(.01)
-        self.player_shoot_sound = pygame.mixer.Sound('assets/sfx_laser1.ogg')
+        self.player_shoot_sound = pygame.mixer.Sound('assets/sounds/sfx_laser1.ogg')
         self.player_shoot_sound.set_volume(.01)
 
     def set_sound_volume(self, volume_level):
         self.enemy_death_sound.set_volume(volume_level)
         self.player_shoot_sound.set_volume(volume_level)
+
     def update(self, game, blocks, paddle):
         if self.rect.y < 0:
             self.kill()
@@ -129,14 +188,26 @@ class Ball(pygame.sprite.Sprite):
 
         if self.enemy == False:
             hitObject = pygame.sprite.spritecollideany(self, blocks)
-            if hitObject:
-                self.enemy_death_sound.play()
+
+            if hitObject and game.wave < 4:
+                self.thud_sound.play()
                 self.kill()
                 game.readyCannon(True)
                 hitObject.kill()
                 game.score += 1
                 if not bool(game.blocks):
-                    game.load_enemies()
+                    if game.wave < 3:
+                        game.load_enemies()
+                    else:
+                        game.load_boss()
+                    game.wave +=1
+            elif hitObject:
+                self.thud_sound.play()
+                self.kill()
+                game.readyCannon(True)
+                for boss in blocks:
+                    boss.is_hit()
+
         else:
             self.vector = [(((paddle.rect.x )- (self.rect.x)) / 48), 3]
 
@@ -144,18 +215,26 @@ class Ball(pygame.sprite.Sprite):
         self.rect.y += self.vector[1]
 
 class Game:
+    wave = 1
+
+    def game_over(self):
+        sys.exit()
+
     def readyCannon(self, Bool):
         self.canShoot = Bool
 
     def __init__(self):
         pygame.init()
         pygame.key.set_repeat(50)
-        pygame.mixer.music.load('assets/loop.wav')
+
+        pygame.mixer.music.load('assets/sounds/loop.wav')
         pygame.mixer_music.set_volume(0.01)
         pygame.mixer.music.play(-1)
+        
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((800, 600))
         self.balls = pygame.sprite.Group()
+        self.bosses = pygame.sprite.Group()
         self.paddle = Paddle()
         self.paddle_group = pygame.sprite.Group()
         self.paddle_group.add(self.paddle)
@@ -170,27 +249,30 @@ class Game:
         self.canShoot = True
 
         for s in range(0,75):
-            star = Star(random.randint(0, 800), random.randint(0, 600), random.randint(0, 10))
+            star = Star(random.randint(0,800),random.randint(0,600),random.randint(0,10))
             self.stars.add(star)
         self.load_enemies()
 
     def load_enemies(self):
         for i in range(0,2):
-            block = Block()
+            block = Block(0)
             block.rect.x = 325 + (i * 150)
             block.rect.y = 50
             self.blocks.add(block)
         for j in range(0,8):
-            block = Block()
+            block = Block(1)
             block.rect.x = 225 + (j * 50)
             block.rect.y = 100
             self.blocks.add(block)
         for k in range(0, 10):
-            block = Block()
+            block = Block(2)
             block.rect.x = 175 + (k * 50)
             block.rect.y = 150
             self.blocks.add(block)
 
+    def load_boss(self):
+        boss = Boss()
+        self.bosses.add(boss)
 
     def run(self):
         self.done = False
@@ -215,9 +297,11 @@ class Game:
                         ball = Ball(False)
                         ball.rect.x = (self.paddle.rect.x) + 25
                         ball.rect.y = (self.paddle.rect.y) + -20
-                        ball.vector = [0, -5]
+                        ball.vector = [0, -10]
                         self.balls.add(ball)
                         self.readyCannon(False)
+                    if event.key == pygame.K_f:
+                        self.lives = 100
                     if event.key == pygame.K_LEFT:
                         self.paddle.left = True
                     if event.key == pygame.K_RIGHT:
@@ -245,17 +329,22 @@ class Game:
 
 
             self.blocks.update(game, bool)
-            self.balls.update(self, self.blocks, self.paddle)
+            if self.wave == 4:
+                self.balls.update(self, self.bosses, self.paddle)
+            else:
+                self.balls.update(self, self.blocks, self.paddle)
             self.stars.update(self.screen)
             self.overlay.update(self.score, self.lives)
             self.paddle.update()
+            self.bosses.update(game)
 
+            self.bosses.draw(self.screen)
             self.balls.draw(self.screen)
             self.paddle.draw(self.screen)
             self.blocks.draw(self.screen)
             self.overlay.draw(self.screen)
             pygame.display.flip()
-            self.clock.tick(120)
+            self.clock.tick(60)
 
 class Intro(pygame.sprite.Sprite):
     def __init__(self):
