@@ -10,12 +10,9 @@ class Overlay(pygame.sprite.Sprite):
         #pygame.sprite.Sprite.__init__(self)
         super(pygame.sprite.Sprite, self).__init__()
         self.image = pygame.Surface((800, 20))
-        #self.image.fill((0, 0, 0))
         self.rect = self.image.get_rect()
 
-        WHITE = (255, 255, 255)
         self.font = pygame.font.Font('freesansbold.ttf', 18)
-        #self.xyxy = self.font.render('Score: 0        Lives: 5', True, WHITE)
         self.render('Score: 0        Lives: 5')
 
     def draw(self, screen):
@@ -54,10 +51,9 @@ class Paddle(pygame.sprite.Sprite):
                 self.rect.x = 750
 
 class Star(pygame.sprite.Sprite):
-    inity =0
-    initx =0
+
     tillBorder = 0
-    starImage = pygame.image.load('assets/star.jpg')
+    starImage = pygame.image.load('assets/laserBlue08.png')
 
     def __init__(self,xpos,ypos,size):
         pygame.sprite.Sprite.__init__(self)
@@ -108,7 +104,7 @@ class Block(pygame.sprite.Sprite):
 
 class Boss(pygame.sprite.Sprite):
     hitpoint = 15
-    boss_image = pygame.image.load(r"assets/enemyBlack1.png")
+    boss_image = pygame.image.load("assets/ships/enemyBlack1.png")
 
 
     def __init__(self):
@@ -118,9 +114,11 @@ class Boss(pygame.sprite.Sprite):
         self.rect.x = 325
         self.rect.y = 50
         self.vector = [5,0]
+        self.boss_intro = pygame.mixer.Sound('assets/sounds/perish.wav')
+        self.boss_intro.set_volume(0.2)
+        self.boss_intro.play()
 
     def shoot(self,game):
-        print("shoot")
         Lball = Ball(True)
         Rball = Ball(True)
         Lball.rect.x = (self.rect.x + 45)
@@ -190,7 +188,7 @@ class Ball(pygame.sprite.Sprite):
             hitObject = pygame.sprite.spritecollideany(self, blocks)
 
             if hitObject and game.wave < 4:
-                self.thud_sound.play()
+                self.enemy_death_sound.play()
                 self.kill()
                 game.readyCannon(True)
                 hitObject.kill()
@@ -202,7 +200,7 @@ class Ball(pygame.sprite.Sprite):
                         game.load_boss()
                     game.wave +=1
             elif hitObject:
-                self.thud_sound.play()
+                self.enemy_death_sound.play()
                 self.kill()
                 game.readyCannon(True)
                 for boss in blocks:
