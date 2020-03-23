@@ -25,7 +25,7 @@ class Overlay(pygame.sprite.Sprite):
         self.render('Score: ' + str(score) + '        Lives: ' + str(lives))
 
 class Paddle(pygame.sprite.Sprite):
-    player_image = pygame.image.load('assets/playerShip1_blue.png')
+    player_image = pygame.image.load('assets/ships/playerShip1_blue.png')
     left = False
     right = False
 
@@ -73,14 +73,25 @@ class Star(pygame.sprite.Sprite):
 
 
 class Block(pygame.sprite.Sprite):
-    enemy1_image = pygame.image.load('/assets')
-    def __init__(self):
+    enemy_blue_image = pygame.image.load('assets/ships/enemyBlue.png')
+    enemy_green_image = pygame.image.load('assets/ships/enemyGreen.png')
+    enemy_red_image = pygame.image.load('assets/ships/enemyRed.png')
+
+    def __init__(self, asset_id):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((25, 25))
-        self.color = ( random.randint(0, 255), random.randint(0, 255), random.randint(0, 255) )
-        self.image.fill(self.color)
+
+        if asset_id == 0:
+            self.image = pygame.transform.scale(self.enemy_blue_image, (25,25))
+        elif asset_id == 1:
+            self.image = pygame.transform.scale(self.enemy_green_image, (25, 25))
+        else:
+            self.image = pygame.transform.scale(self.enemy_red_image, (25, 25))
+
         self.rect = self.image.get_rect()
         self.vector = [2,0]
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
     def update(self, game, bool):
         if bool == True:
@@ -105,9 +116,9 @@ class Ball(pygame.sprite.Sprite):
         self.rect.x = 400
         self.rect.y = 560
         self.vector = [ 0, 0 ]
-        self.enemy_death_sound = pygame.mixer.Sound('assets/enemy_explosion.wav')
+        self.enemy_death_sound = pygame.mixer.Sound('assets/sounds/enemy_explosion.wav')
         self.enemy_death_sound.set_volume(.01)
-        self.player_shoot_sound = pygame.mixer.Sound('assets/sfx_laser1.ogg')
+        self.player_shoot_sound = pygame.mixer.Sound('assets/sounds/sfx_laser1.ogg')
         self.player_shoot_sound.set_volume(.01)
 
     def set_sound_volume(self, volume_level):
@@ -150,7 +161,7 @@ class Game:
     def __init__(self):
         pygame.init()
         pygame.key.set_repeat(50)
-        pygame.mixer.music.load('assets/loop.wav')
+        pygame.mixer.music.load('assets/sounds/loop.wav')
         pygame.mixer_music.set_volume(0.01)
         pygame.mixer.music.play(-1)
         self.clock = pygame.time.Clock()
@@ -176,17 +187,17 @@ class Game:
 
     def load_enemies(self):
         for i in range(0,2):
-            block = Block()
+            block = Block(0)
             block.rect.x = 325 + (i * 150)
             block.rect.y = 50
             self.blocks.add(block)
         for j in range(0,8):
-            block = Block()
+            block = Block(1)
             block.rect.x = 225 + (j * 50)
             block.rect.y = 100
             self.blocks.add(block)
         for k in range(0, 10):
-            block = Block()
+            block = Block(2)
             block.rect.x = 175 + (k * 50)
             block.rect.y = 150
             self.blocks.add(block)
