@@ -25,14 +25,14 @@ class Overlay(pygame.sprite.Sprite):
     def update(self, score, lives):
         self.render('Score: ' + str(score) + '        Lives: ' + str(lives))
 
-class Paddle(pygame.sprite.Sprite):
-    player_image = pygame.image.load('assets/ships/playerShip1_blue.png')
-    left = False
-    right = False
 
+class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
+        self.player_image = pygame.image.load('assets/ships/playerShip1_blue.png')
         self.image = pygame.transform.scale(self.player_image, (50, 50))
+        self.left = False
+        self.right = False
         self.rect = self.image.get_rect()
         self.rect.x = 375
         self.rect.y = 540
@@ -51,12 +51,10 @@ class Paddle(pygame.sprite.Sprite):
                 self.rect.x = 750
 
 class Star(pygame.sprite.Sprite):
-
-    tillBorder = 0
-    starImage = pygame.image.load('assets/laserBlue08.png')
-
     def __init__(self,xpos,ypos,size):
         pygame.sprite.Sprite.__init__(self)
+        self.tillBorder = 0
+        self.starImage = pygame.image.load('assets/laserBlue08.png')
         self.xpos = xpos
         self.ypos = ypos
         self.initx= xpos
@@ -76,13 +74,14 @@ class Star(pygame.sprite.Sprite):
         screen.blit(self.image, (self.xpos, self.ypos))
 
 
-class Block(pygame.sprite.Sprite):
-    enemy_blue_image = pygame.image.load('assets/ships/enemyBlue.png')
-    enemy_green_image = pygame.image.load('assets/ships/enemyGreen.png')
-    enemy_red_image = pygame.image.load('assets/ships/enemyRed.png')
+class Enemy(pygame.sprite.Sprite):
+
 
     def __init__(self, asset_id):
         pygame.sprite.Sprite.__init__(self)
+        self.enemy_blue_image = pygame.image.load('assets/ships/enemyBlue.png')
+        self.enemy_green_image = pygame.image.load('assets/ships/enemyGreen.png')
+        self.enemy_red_image = pygame.image.load('assets/ships/enemyRed.png')
 
         if asset_id == 0:
             self.image = pygame.transform.scale(self.enemy_blue_image, (25,25))
@@ -97,30 +96,40 @@ class Block(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
+    def shoot(self, game):
+        ball = Enemy(True)
+        ball.rect.x = (self.rect.x) + 12
+        ball.rect.y = (self.rect.y) + 10
+        game.balls.add(ball)
+        ball.enemy = True
+
     def update(self, game, bool):
         if bool == True:
             self.vector[0] *= -1
         self.rect.x += self.vector[0]
+        if random.randint(0, 500) < 1:
+            self.shoot(game)
 
 class Boss(pygame.sprite.Sprite):
-    hitpoint = 15
-    boss_image = pygame.image.load("assets/ships/enemyBlack1.png")
-
 
     def __init__(self):
+        boss_image = pygame.image.load("assets/ships/enemyBlack1.png")
         pygame.sprite.Sprite.__init__(self)
+
+        self.hitpoint = 15
         self.image = pygame.transform.scale(self.boss_image, (150, 100))
         self.rect = self.image.get_rect()
         self.rect.x = 325
         self.rect.y = 50
         self.vector = [5,0]
+
         self.boss_intro = pygame.mixer.Sound('assets/sounds/perish.wav')
         self.boss_intro.set_volume(0.2)
         self.boss_intro.play()
 
     def shoot(self,game):
-        Lball = Ball(True)
-        Rball = Ball(True)
+        Lball = Lazer(True)
+        Rball = Lazer(True)
         Lball.rect.x = (self.rect.x + 45)
         Lball.rect.y = 145
         Rball.rect.x = (self.rect.x + 105)
@@ -145,9 +154,9 @@ class Boss(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
-class Ball(pygame.sprite.Sprite):
-    enemy = False
-    def __init__(self,enemy):
+class Lazer(pygame.sprite.Sprite):
+
+    def __init__(self, enemy):
         self.enemy = enemy
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((5, 5))
@@ -213,7 +222,6 @@ class Ball(pygame.sprite.Sprite):
         self.rect.y += self.vector[1]
 
 class Game:
-    wave = 1
 
     def game_over(self):
         sys.exit()
@@ -233,7 +241,7 @@ class Game:
         self.screen = pygame.display.set_mode((800, 600))
         self.balls = pygame.sprite.Group()
         self.bosses = pygame.sprite.Group()
-        self.paddle = Paddle()
+        self.paddle = Player()
         self.paddle_group = pygame.sprite.Group()
         self.paddle_group.add(self.paddle)
         self.new_life_event = pygame.event.Event(pygame.USEREVENT + 1)
@@ -241,7 +249,9 @@ class Game:
         self.stars = pygame.sprite.Group()
         self.overlay = Overlay()
         self.screen.fill((255, 255, 255))
-        self.ready = True 
+        self.ready = True
+
+        self.wave = 1
         self.score = 0
         self.lives = 3
         self.canShoot = True
@@ -251,19 +261,20 @@ class Game:
             self.stars.add(star)
         self.load_enemies()
 
+    # This function loads in the enemmies in their default locations
     def load_enemies(self):
         for i in range(0,2):
-            block = Block(0)
+            block = Enemy(0)
             block.rect.x = 325 + (i * 150)
             block.rect.y = 50
             self.blocks.add(block)
         for j in range(0,8):
-            block = Block(1)
+            block = Enemy(1)
             block.rect.x = 225 + (j * 50)
             block.rect.y = 100
             self.blocks.add(block)
         for k in range(0, 10):
-            block = Block(2)
+            block = Enemy(2)
             block.rect.x = 175 + (k * 50)
             block.rect.y = 150
             self.blocks.add(block)
@@ -280,19 +291,12 @@ class Game:
                 if self.lives <= 0:
                     pygame.quit()
                     sys.exit(0)
-                #if event.type == self.new_life_event.type:
-                    #self.lives -= 1
-                    #if self.lives > 0:
-                        #self.ready = True
-                    #else:
-                        #pygame.quit()
-                        #sys.exit(0)
 
                 if event.type == pygame.QUIT:
                     self.done = True
                 if event.type == pygame.KEYDOWN:
                     if (event.key == pygame.K_SPACE) & self.canShoot:
-                        ball = Ball(False)
+                        ball = Lazer(False)
                         ball.rect.x = (self.paddle.rect.x) + 25
                         ball.rect.y = (self.paddle.rect.y) + -20
                         ball.vector = [0, -10]
@@ -310,27 +314,22 @@ class Game:
                     if event.key == pygame.K_RIGHT:
                         self.paddle.right = False
 
-            if random.randint(0,100) < 2:
-                ball = Ball(True)
-                ships = list(self.blocks)
-                if len(ships) > 0:
-                    attackShip = random.randint(0,len(ships)-1)
-                    ball.rect.x = (ships[attackShip].rect.x) + 12
-                    ball.rect.y = (ships[attackShip].rect.y) + 10
-                    self.balls.add(ball)
-                    ball.enemy = True
-
+            # This statement checks all the enemy sprites to see if any are colliding with the edge
+            # and then sets a bool to change the direction of all of them before update
             bool = False
             for sprite in self.blocks.sprites():
                 if sprite.rect.x <= 50 or sprite.rect.x >= 750:
                     bool = True
 
-
+            # This checks if the wave is a boss wave to pass the correct variable
+            # for hit detection of enemy vs boss
             self.blocks.update(game, bool)
             if self.wave == 4:
                 self.balls.update(self, self.bosses, self.paddle)
             else:
                 self.balls.update(self, self.blocks, self.paddle)
+
+
             self.stars.update(self.screen)
             self.overlay.update(self.score, self.lives)
             self.paddle.update()
